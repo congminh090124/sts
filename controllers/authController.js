@@ -2,7 +2,7 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
 const nodemailer = require('nodemailer');
-
+const crypto = require('crypto');
 dotenv.config();
 
 // Cấu hình nodemailer
@@ -103,6 +103,7 @@ exports.login = async (req, res) => {
       }
       res.json({
         success: true,
+        userId: user._id,
         token: generateToken(user._id),
       });
     } else {
@@ -148,4 +149,67 @@ const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: '30d',
   });
+};
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    // Tìm user với email đã cung cấp
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: 'Không tìm thấy người dùng với email này' });
+    }
+
+    // Tạo OTP
+    const otp = generateOTP();
+    const otpExpiration = Date.now() + 10 * 60 * 1000; // OTP hết hạn sau 10 phút
+
+    // Lưu OTP và thời gian hết hạn vào database
+    user.resetPasswordOTP = otp;
+    user.resetPasswordOTPExpire = otpExpiration;
+    await user.save();
+
+    // Gửi email chứa OTP
+    const message = `Mã OTP để đặt lại mật khẩu của bạn là: ${otp}. Mã này sẽ hết hạn sau 10 phút.`;
+
+    await transporter.sendMail({
+      from: process.env.EMAIL_USERNAME,
+      to: user.email,
+      subject: 'Đặt lại mật khẩu',
+      text: message
+    });
+
+    res.status(200).json({ success: true, message: 'OTP đã được gửi đến email của bạn' });
+  } catch (error) {
+    console.error('Lỗi khi gửi OTP:', error);
+    res.status(500).json({ message: 'Lỗi server', error: error.message });
+  }
+};
+
+exports.resetPass = async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+
+    const user = await User.findOne({
+      email,
+      resetPasswordOTP: otp,
+      resetPasswordOTPExpire: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'OTP không hợp lệ hoặc đã hết hạn' });
+    }
+
+    // Đặt mật khẩu mới
+    user.password = newPassword;
+    user.resetPasswordOTP = undefined;
+    user.resetPasswordOTPExpire = undefined;
+    await user.save();
+
+    res.status(200).json({ success: true, message: 'Mật khẩu đã được đặt lại thành công' });
+  } catch (error) {
+    console.error('Lỗi khi đặt lại mật khẩu:', error);
+    res.status(500).json({ message: 'Lỗi server', error: error.message });
+  }
 };

@@ -35,7 +35,9 @@ const UserSchema = new mongoose.Schema({
   isVerified: {
     type: Boolean,
     default: false,
-  }
+  },
+  resetPasswordOTP: String,
+  resetPasswordOTPExpire: Date
 });
 
 UserSchema.pre('save', async function(next) {
