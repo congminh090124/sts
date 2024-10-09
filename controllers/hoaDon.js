@@ -39,6 +39,7 @@ exports.createInvoice = async (req, res) => {
       });
     }
 };
+
 exports.showInvoice = async (req, res) => {
   try {
     const invoices = await Invoice.find({ userId: req.params.userId })

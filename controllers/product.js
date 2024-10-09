@@ -5,26 +5,26 @@ const ProductSchema = require('../models/Product'); // Đường dẫn tới fil
 // API thêm sản phẩm
 exports.addProduct = async (req, res) => {
     try {
-        const { nameProduct  } = req.body;
+        const { nameProduct } = req.body;
 
-        // Tạo một đối tượng sản phẩm mới từ thông tin request
+        if (!nameProduct) {
+            return res.status(400).json({
+                message: "Tên sản phẩm là bắt buộc"
+            });
+        }
+
         const newProduct = new ProductSchema({
-            nameProduct,
-           
-         
-            
+            nameProduct
         });
 
-        // Lưu sản phẩm vào cơ sở dữ liệu
         const savedProduct = await newProduct.save();
 
-        // Trả về phản hồi thành công
         res.status(201).json({
             message: "Sản phẩm đã được thêm thành công",
             product: savedProduct
         });
     } catch (error) {
-        // Xử lý lỗi
+        console.error("Lỗi khi thêm sản phẩm:", error);
         res.status(500).json({
             message: "Lỗi khi thêm sản phẩm",
             error: error.message
