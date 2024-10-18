@@ -15,7 +15,10 @@ connectDB();
 const app = express();
 
 app.use(express.json());
-
+app.get('/', (req, res) => {
+    res.send('hello');
+  });
+  
 app.use('/api/auth', authRoutes);
 app.use('/api/product', product);
 app.use('/api/category', category);
