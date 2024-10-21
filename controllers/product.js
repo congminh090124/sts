@@ -43,9 +43,19 @@ exports.search = async (req, res) => {
             });
         }
 
-        // Sử dụng từ khóa tìm kiếm toàn bộ cụm từ thay vì tách từ
+        // Normalize the keyword: remove diacritics and convert to lowercase
+        const normalizedKeyword = keyword.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+        // Create a regex pattern that matches the normalized keyword
+        const regexPattern = normalizedKeyword.split('').join('\\p{M}*');
+
         const searchCondition = {
-            nameProduct: { $regex: keyword.trim(), $options: 'i' }
+            $or: [
+                // Match original product name (case-insensitive)
+                { nameProduct: { $regex: keyword.trim(), $options: 'i' } },
+                // Match normalized product name
+                { nameProduct: { $regex: regexPattern, $options: 'i' } }
+            ]
         };
 
         // Tìm kiếm sản phẩm dựa trên điều kiện
