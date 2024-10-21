@@ -32,7 +32,6 @@ exports.addProduct = async (req, res) => {
     }
 };
 
-// API tìm kiếm sản phẩm
 exports.search = async (req, res) => {
     try {
         const { keyword } = req.query;
@@ -43,33 +42,34 @@ exports.search = async (req, res) => {
             });
         }
 
-        // Normalize the keyword: remove diacritics and convert to lowercase
-        const normalizedKeyword = keyword.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        // Normalize từ khóa tìm kiếm
+        const normalizedKeyword = keyword
+            .trim()
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "");
 
-        // Create a regex pattern that matches the normalized keyword
-        const regexPattern = normalizedKeyword.split('').join('\\p{M}*');
+        // Lấy tất cả sản phẩm
+        const allProducts = await ProductSchema.find({});
+        
+        // Lọc sản phẩm theo từ khóa đã chuẩn hóa
+        const products = allProducts.filter(product => {
+            const normalizedName = product.nameProduct
+                .toLowerCase()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "");
+            
+            return normalizedName.includes(normalizedKeyword);
+        });
 
-        const searchCondition = {
-            $or: [
-                // Match original product name (case-insensitive)
-                { nameProduct: { $regex: keyword.trim(), $options: 'i' } },
-                // Match normalized product name
-                { nameProduct: { $regex: regexPattern, $options: 'i' } }
-            ]
-        };
-
-        // Tìm kiếm sản phẩm dựa trên điều kiện
-        const products = await ProductSchema.find(searchCondition);
-
-        // Log để debug
         console.log(`Tìm kiếm với từ khóa: "${keyword}"`);
         console.log(`Số lượng kết quả: ${products.length}`);
 
-        // Trả về kết quả tìm kiếm
         res.status(200).json({
             message: "Tìm kiếm thành công",
             results: products
         });
+
     } catch (error) {
         console.error("Lỗi khi tìm kiếm sản phẩm:", error);
         res.status(500).json({
@@ -78,3 +78,5 @@ exports.search = async (req, res) => {
         });
     }
 };
+
+
