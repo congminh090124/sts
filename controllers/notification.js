@@ -2,19 +2,25 @@ const Notification = require('../models/Notification');
 const User = require('../models/User');
 
 // Tạo một thông báo mới cho người dùng
-exports.createNotification = async (userId, message, title, type) => {
+exports.createNotification = async (userId, message, title, type, invoiceId) => {
   try {
     const user = await User.findById(userId);
     if (!user) {
       throw new Error('User not found');
     }
 
-    const notification = new Notification({
+    const notificationData = {
       user: userId,
       message: message,
       title: title,
       type: type
-    });
+    };
+
+    if (type === 'order' && invoiceId) {
+      notificationData.invoiceId = invoiceId;
+    }
+
+    const notification = new Notification(notificationData);
 
     await notification.save();
     return notification;
@@ -32,12 +38,13 @@ exports.getUserNotifications = async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(20);
 
-    const formattedNotifications = notifications.map((notification, index) => ({
-      id: (index + 1).toString(),
+    const formattedNotifications = notifications.map((notification) => ({
+      id: notification._id.toString(),
       icon: getIconForNotification(notification.type),
       title: notification.title,
       description: notification.message,
-      time: getTimeAgo(notification.createdAt)
+      time: getTimeAgo(notification.createdAt),
+      invoiceId: notification.invoiceId
     }));
 
     res.status(200).json(formattedNotifications);
@@ -56,14 +63,6 @@ function getIconForNotification(type) {
       return 'gift-outline';
     case 'menu':
       return 'restaurant-outline';
-    case 'delivery':
-      return 'local-shipping';
-    case 'review':
-      return 'star-border';
-    case 'weekend':
-      return 'weekend';
-    case 'dessert':
-      return 'ice-cream';
     default:
       return 'notifications-outline';
   }

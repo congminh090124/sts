@@ -26,7 +26,7 @@ exports.createInvoice = async (req, res) => {
     const notificationTitle = 'Hóa đơn mới';
     const notificationMessage = `Hóa đơn mới đã được tạo với ID: ${newInvoice._id}`;
     const notificationType = 'order';
-    await createNotification(userId, notificationMessage, notificationTitle, notificationType);
+    await createNotification(userId, notificationMessage, notificationTitle, notificationType, newInvoice._id);
 
     res.status(201).json({
       success: true,

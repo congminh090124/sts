@@ -26,6 +26,13 @@ const notificationSchema = new mongoose.Schema({
   isRead: {
     type: Boolean,
     default: false
+  },
+  invoiceId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Invoice',
+    required: function() {
+      return this.type === 'order';
+    }
   }
 });
 
