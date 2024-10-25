@@ -3,7 +3,7 @@ const connectDB = require('./config/db');
 const authRoutes = require('./routes/auth');
 const product = require('./routes/product');
 const category = require('./routes/category');
-
+const notification = require('./routes/notification');
 const hoaDon = require('./routes/hoaDon');
 const cart = require('./routes/cart');
 const dotenv = require('dotenv');
@@ -22,7 +22,7 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/product', product);
 app.use('/api/category', category);
-
+app.use('/api/notifications', notification);
 app.use('/api/hoaDon', hoaDon);
 app.use('/api/cart', cart);
 
